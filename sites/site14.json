@@ -1,0 +1,19 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "SxjvmH",
+                "custom_source": "SMS Subscriber - Test Full Page Width",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "TsjxcM",
+                    "$consent_form_version": 3952169,
+                    "services": "{\"shopify\":{\"source\":\"form\"}}",
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "LhxUrG"
+}

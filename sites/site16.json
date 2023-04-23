@@ -1,0 +1,18 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "Sedkin",
+                "custom_source": "SMS Opt In",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "RFYvCE",
+                    "$consent_form_version": 4879403,
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "KdvVUE"
+}

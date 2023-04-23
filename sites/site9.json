@@ -1,0 +1,19 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "RiNsbK",
+                "custom_source": "Landing Page SMS Sign Up",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "VfDE24",
+                    "$consent_form_version": 6659065,
+                    "services": "{\"shopify\":{\"source\":\"form\"}}",
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "P922QU"
+}

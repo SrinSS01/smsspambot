@@ -1,0 +1,19 @@
+{
+  "site_data": {
+    "data": {
+      "type": "subscription",
+      "attributes": {
+        "list_id": "W3idJv",
+        "custom_source": "Weekly SMS deals",
+        "phone_number": "+{number}",
+        "properties": {
+          "$consent_method": "Klaviyo Form",
+          "$consent_form_id": "VApF4c",
+          "$consent_form_version": 5270309,
+          "$timezone_offset": -6
+        }
+      }
+    }
+  },
+  "company_id": "XgW6yW"
+}

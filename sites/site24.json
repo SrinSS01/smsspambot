@@ -1,0 +1,20 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "T8ESgs",
+                "custom_source": "DFY | SMS Signup Form",
+                "email": "oiasjdoij@gmail.com",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "USNNH8",
+                    "$consent_form_version": 5010742,
+                    "services": "{\"shopify\":{\"source\":\"form\"}}",
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "RdkAq7"
+}

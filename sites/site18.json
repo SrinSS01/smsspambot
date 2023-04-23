@@ -1,0 +1,20 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "S6zBdx",
+                "custom_source": "Inline signup",
+                "email": "asoiujda@gmail.com",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "XanFcF",
+                    "$consent_form_version": 6017260,
+                    "services": "{\"shopify\":{\"source\":\"form\"}}",
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "Re9euJ"
+}

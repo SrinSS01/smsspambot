@@ -1,0 +1,19 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "R5wNPE",
+                "custom_source": "SMS Sign Up Landing Page",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "Xx86zH",
+                    "$consent_form_version": 6790539,
+                    "services": "{\"shopify\":{\"source\":\"form\"}}",
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "HvASzF"
+}

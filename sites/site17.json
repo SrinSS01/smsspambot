@@ -1,0 +1,20 @@
+{
+  "site_data": {
+    "data": {
+      "type": "subscription",
+      "attributes": {
+        "list_id": "TeVhRR",
+        "custom_source": "SMS-Signup",
+        "phone_number": "+{number}",
+        "properties": {
+          "$consent_method": "Klaviyo Form",
+          "$consent_form_id": "Sw5DFK",
+          "$consent_form_version": 6571335,
+          "services": "{\"shopify\":{\"source\":\"form\"}}",
+          "$timezone_offset": -6
+        }
+      }
+    }
+  },
+  "company_id": "YkaAdx"
+}

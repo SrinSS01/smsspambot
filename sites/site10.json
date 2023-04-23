@@ -1,0 +1,19 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "V6y7gf",
+                "custom_source": "SMS Embed Form",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "XNTG39",
+                    "$consent_form_version": 6293874,
+                    "services": "{\"shopify\":{\"source\":\form\"}}",
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "S5S55d"
+}

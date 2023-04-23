@@ -1,0 +1,20 @@
+{
+    "site_data": {
+        "data": {
+            "type": "subscription",
+            "attributes": {
+                "list_id": "X3fFdf",
+                "custom_source": "Get the hottest deals - SMS + Email",
+                "email": "oiuashdiuh@gmail.com",
+                "phone_number": "+{number}",
+                "properties": {
+                    "$first_name": "John",
+                    "$consent_method": "Klaviyo Form",
+                    "$consent_form_id": "RkaZk4",
+                    "$consent_form_version": 3451951,
+                    "$timezone_offset": -6
+                }
+            }
+        }
+    },"company_id": "Se6H4i"
+}
