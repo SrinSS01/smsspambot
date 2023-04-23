@@ -1,3 +1,4 @@
+FROM maven:3.8.3-openjdk-17-slim
 FROM openjdk:17.0.2-oracle
 MAINTAINER io.github.srinss01
 WORKDIR /bot
