@@ -31,6 +31,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.ProxyAuthenticationStrategy;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,19 +43,17 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 @SuppressWarnings("unchecked")
 public class Spam extends CommandDataImpl implements ICustomCommandData {
-    private final ProxiesRepo proxiesRepo;
-    private final ActivationRepo activationRepo;
+    private final Database database;
     // logger
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Spam.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static final Function<Database, Spam> COMMAND = Spam::new;
     private static final Map<String, String> headers = new HashMap<>();
-    private static final Function<String, Modal> SPAM_MODAL = proxy -> Modal.create("spam", "Details")
+    private static final Modal SPAM_MODAL = Modal.create("spam", "Details")
             .addComponents(
                     ActionRow.of(TextInput.create("number", "Phone Number (without the +)", TextInputStyle.SHORT).setMinLength(11).setMaxLength(13).setPlaceholder("XXXXXXXXXXXXX").setRequired(true).build()),
                     ActionRow.of(TextInput.create("message-count", "Message Count", TextInputStyle.SHORT).setMinLength(1).setMaxLength(4).setPlaceholder("Number of messages to send").setRequired(true).build()),
-                    ActionRow.of(TextInput.create("thread-count", "Thread Count", TextInputStyle.SHORT).setMinLength(1).setMaxLength(2).setRequired(false).setPlaceholder("defaults to 4").build()),
-                    ActionRow.of(TextInput.create("proxy", "Proxy", TextInputStyle.SHORT).setPlaceholder("user:pass@ip:port").setRequired(true).setValue(proxy).build())
+                    ActionRow.of(TextInput.create("thread-count", "Thread Count", TextInputStyle.SHORT).setMinLength(1).setMaxLength(2).setRequired(false).setPlaceholder("defaults to 4").build())
             ).build();
 
     static {
@@ -73,8 +72,24 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
 
     public Spam(Database database) {
         super("spam", "Spams SMS to a number");
-        this.proxiesRepo = database.getProxiesRepo();
-        this.activationRepo = database.getActivationRepo();
+        this.database = database;
+
+        String proxyStr = database.getConfig().getProxy();
+        Pattern pattern = Pattern.compile("^(?<usr>[\\w-]+):(?<pswrd>[\\w-]+)@(?<host>\\w+(.\\w)*):(?<port>\\d+)$");
+        Matcher matcher = pattern.matcher(proxyStr);
+        if (!matcher.find()) {
+            if (!SMSSpamBotApplication.isHeadless()) {
+                JOptionPane.showMessageDialog(null, "Invalid proxy format", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            logger.error("Invalid proxy format");
+            System.exit(1);
+        }
+        applyProxy(
+            matcher.group("host"),
+            matcher.group("port"),
+            matcher.group("usr"),
+            matcher.group("pswrd")
+        );
     }
 
     public void spamModalInteraction(ModalInteractionEvent event) {
@@ -82,7 +97,6 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
         String messageCount = Objects.requireNonNull(event.getValue("message-count")).getAsString().trim();
         AtomicInteger messageCountInt = new AtomicInteger(Integer.parseInt(messageCount));
         ModalMapping threadCount = event.getValue("thread-count");
-        var proxy = Objects.requireNonNull(event.getValue("proxy"));
         String threadCountString = threadCount == null ? "4" : threadCount.getAsString().trim();
         threadCountString = threadCountString.isBlank() ? "4" : threadCountString;
         if (!number.matches("^\\d{1,3}\\d{10}$")) {
@@ -97,26 +111,8 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
             event.reply("Invalid thread count").setEphemeral(true).queue();
             return;
         }
-        String proxyStr = proxy.getAsString();
-        Pattern pattern = Pattern.compile("^(?<usr>[\\w-]+):(?<pswrd>[\\w-]+)@(?<host>\\w+(.\\w)*):(?<port>\\d+)$");
-        Matcher matcher = pattern.matcher(proxyStr);
-        if (!matcher.find()) {
-            event.reply("Invalid proxy").setEphemeral(true).queue();
-            return;
-        }
+
         event.reply("Initiating SMS spam...").setEphemeral(true).queue();
-        long userId = event.getUser().getIdLong();
-        Optional<Proxies> proxies = proxiesRepo.findById(userId);
-        // if proxies.get().getProxy() don't match proxy string then update the database
-        if (proxies.isPresent()) {
-            Proxies _proxy = proxies.get();
-            if (!_proxy.getProxy().equals(proxyStr)) {
-                _proxy.setProxy(proxyStr);
-                proxiesRepo.save(_proxy);
-            }
-        } else {
-            proxiesRepo.save(new Proxies(userId, proxyStr));
-        }
         List<String> sites = SMSSpamBotApplication.getSITES();
         TextChannel textChannel = event.getChannel().asTextChannel();
         AtomicInteger threadCountInt = new AtomicInteger(Integer.parseInt(threadCountString) * sites.size());
@@ -137,12 +133,7 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
                             String companyId = map.get("company_id").toString();
                             String siteData = GSON.toJson(map.get("site_data")).replace("{number}", number);
 
-                            applyProxy(
-                                    matcher.group("host"),
-                                    matcher.group("port"),
-                                    matcher.group("usr"),
-                                    matcher.group("pswrd")
-                            );
+
 
                             HttpResponse<String> response = getHttpResponse(companyId, siteData);
 
@@ -190,10 +181,9 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
     @Override
     public void execute(SlashCommandInteraction interaction) {
         long idLong = interaction.getUser().getIdLong();
-        Optional<Proxies> proxies = proxiesRepo.findById(idLong);
-        Optional<Activations> activation = activationRepo.findById(idLong);
+        Optional<Activations> activation = database.getActivationRepo().findById(idLong);
         activation.ifPresentOrElse(
-                activations -> interaction.replyModal(SPAM_MODAL.apply(proxies.map(Proxies::getProxy).orElse(null))).queue(), () -> {
+                activations -> interaction.replyModal(SPAM_MODAL).queue(), () -> {
                     TextInput key = TextInput
                             .create("key", "Activation Key", TextInputStyle.SHORT)
                             .setPlaceholder("Enter token here")
@@ -217,7 +207,7 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
             ActivationStatus.ResponseMap response = activationStatus.check(key, userId);
             if (response.getBoolean("success")) {
                 event.reply("Successfully activated! please re-run the command to use it").setEphemeral(true).queue();
-                activationRepo.save(new Activations(Long.parseLong(userId), key));
+                database.getActivationRepo().save(new Activations(Long.parseLong(userId), key));
             } else {
                 event.replyFormat("Activation failed: %s", response.getString("message")).setEphemeral(true).queue();
             }

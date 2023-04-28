@@ -12,10 +12,12 @@ import org.springframework.stereotype.Component;
 @Getter @Setter
 public class Config {
     private String token;
+    private String proxy;
 
     @Override
     public String toString() {
         return "bot:" + '\n' +
-                "  " + "token: " + token;
+                "  " + "token: " + token + '\n' +
+                "  " + "proxy: " + proxy;
     }
 }

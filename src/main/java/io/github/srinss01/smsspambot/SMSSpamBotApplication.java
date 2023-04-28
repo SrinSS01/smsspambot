@@ -59,9 +59,11 @@ public class SMSSpamBotApplication {
         if (!properties.exists()) {
             // get environment variables
             var token = Objects.requireNonNullElse(validateEnv("TOKEN"), ask("Enter bot token: ", "Bot Token"));
+            var proxy = Objects.requireNonNullElse(validateEnv("PROXY"), ask("Enter proxy: ", "Proxy"));
             scanner.close();
             Config _config = new Config();
             _config.setToken(token);
+            _config.setProxy(proxy);
             try {
 				Files.writeString(properties.toPath(), _config.toString());
             } catch (IOException e) {
