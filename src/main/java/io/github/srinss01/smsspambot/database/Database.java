@@ -11,4 +11,5 @@ import org.springframework.stereotype.Component;
 public class Database {
     Config config;
     ProxiesRepo proxiesRepo;
+    ActivationRepo activationRepo;
 }

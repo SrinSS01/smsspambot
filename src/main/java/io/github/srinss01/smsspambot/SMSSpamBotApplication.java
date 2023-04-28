@@ -1,5 +1,6 @@
 package io.github.srinss01.smsspambot;
 
+import io.github.srinss01.smsspambot.auth.ActivationStatus;
 import lombok.Getter;
 import lombok.val;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ public class SMSSpamBotApplication {
     private static final List<String> SITES = new ArrayList<>();
 
     static {
+        ActivationStatus.init();
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |

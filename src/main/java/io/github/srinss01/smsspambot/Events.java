@@ -22,7 +22,7 @@ public class Events extends ListenerAdapter {
     public Events(Database database) {
         this.database = database;
         put(Stop.COMMAND);
-        spamCommand = Spam.COMMAND.apply(database.getProxiesRepo());
+        spamCommand = Spam.COMMAND.apply(database);
         put(spamCommand);
     }
 
@@ -44,7 +44,9 @@ public class Events extends ListenerAdapter {
     public void onModalInteraction(ModalInteractionEvent event) {
         String modalId = event.getModalId();
         if (modalId.contains("spam")) {
-            spamCommand.onModalInteraction(event);
+            spamCommand.spamModalInteraction(event);
+        } else if (modalId.equals("activation")) {
+            spamCommand.activationModalInteraction(event);
         }
     }
 }

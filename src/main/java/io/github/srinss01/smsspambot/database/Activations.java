@@ -6,11 +6,11 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 @Entity
-@Table(name = "proxies")
+@Table(name = "activities")
 @Getter @Setter @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Proxies {
+public class Activations {
     @Id private long id;
-    private String proxy;
+    private String activationKey;
 }
