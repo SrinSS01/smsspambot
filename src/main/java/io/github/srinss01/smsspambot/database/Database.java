@@ -1,9 +1,13 @@
 package io.github.srinss01.smsspambot.database;
 
 import io.github.srinss01.smsspambot.Config;
+import io.github.srinss01.smsspambot.auth.ActivationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @AllArgsConstructor
@@ -11,4 +15,5 @@ import org.springframework.stereotype.Component;
 public class Database {
     Config config;
     ActivationRepo activationRepo;
+    public static final Map<Long, ActivationStatus> activationSessionMap = new HashMap<>();
 }

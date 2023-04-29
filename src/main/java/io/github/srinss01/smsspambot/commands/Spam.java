@@ -8,7 +8,8 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import io.github.srinss01.smsspambot.SMSSpamBotApplication;
 import io.github.srinss01.smsspambot.auth.ActivationStatus;
-import io.github.srinss01.smsspambot.database.*;
+import io.github.srinss01.smsspambot.database.Activations;
+import io.github.srinss01.smsspambot.database.Database;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
@@ -157,6 +158,18 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
             executor.shutdown();
         });
     }
+    public void activationModalInteraction(ModalInteractionEvent event) {
+        long userId = event.getUser().getIdLong();
+        String key = Objects.requireNonNull(event.getValue("key")).getAsString();
+        ActivationStatus.ResponseMap response = validateKey(userId, key);
+        if (!response.getBoolean("success")) {
+            event.replyFormat("Activation failed: %s", response.getString("message")).setEphemeral(true).queue();
+            return;
+        }
+        event.reply("Successfully activated! please re-run the command to use it").setEphemeral(true).queue();
+        database.getActivationRepo().save(new Activations(userId, key));
+        Database.activationSessionMap.remove(userId);
+    }
 
     private static HttpResponse<String> getHttpResponse(String companyId, String siteData) throws UnirestException {
         return Unirest.post("https://a.klaviyo.com/client/subscriptions/?company_id=" + companyId)
@@ -178,41 +191,48 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
         Unirest.setHttpClient(clientBuilder.build());
     }
 
-    @Override
-    public void execute(SlashCommandInteraction interaction) {
-        long idLong = interaction.getUser().getIdLong();
-        Optional<Activations> activation = database.getActivationRepo().findById(idLong);
-        activation.ifPresentOrElse(
-                activations -> interaction.replyModal(SPAM_MODAL).queue(), () -> {
-                    TextInput key = TextInput
-                            .create("key", "Activation Key", TextInputStyle.SHORT)
-                            .setPlaceholder("Enter token here")
-                            .setRequired(true)
-                            .build();
-                    interaction.replyModal(Modal.create("activation", "Activate").addActionRow(key).build()).queue();
-                }
-        );
+    private static ActivationStatus.ResponseMap validateKey(Long id, String key) {
+        try {
+            ActivationStatus activationStatus = Database.activationSessionMap.get(id);
+            if (activationStatus == null) {
+                ActivationStatus.ResponseMap responseMap = new ActivationStatus.ResponseMap();
+                responseMap.put("success", false);
+                responseMap.put("message", "Encountered an error please re-run the command");
+                return responseMap;
+            }
+            return activationStatus.check(key, String.valueOf(id));
+        } catch (UnirestException e) {
+            ActivationStatus.ResponseMap responseMap = new ActivationStatus.ResponseMap();
+            responseMap.put("success", false);
+            responseMap.put("message", "Encountered an error please refer the following message to the developer: ```\n" + e.getMessage() + "\n```");
+            return responseMap;
+        }
     }
 
-    public void activationModalInteraction(ModalInteractionEvent event) {
+    @Override
+    public void execute(SlashCommandInteraction interaction) {
         ActivationStatus.ActivationStatusResponsePair result = ActivationStatus.init();
-        ActivationStatus activationStatus = result.getActivationStatus();
-        if (activationStatus == null) {
-            event.replyFormat("Encountered an error please refer the following message to the developer: ```\n%s\n```", result.getResponseMap().getString("message")).setEphemeral(true).queue();
+        ActivationStatus activationSession = result.getActivationStatus();
+        if (activationSession == null) {
+            interaction.replyFormat("Encountered an error please refer the following message to the developer: ```\n%s\n```", result.getResponseMap().getString("message")).setEphemeral(true).queue();
             return;
         }
-        String userId = event.getUser().getId();
-        String key = Objects.requireNonNull(event.getValue("key")).getAsString();
-        try {
-            ActivationStatus.ResponseMap response = activationStatus.check(key, userId);
-            if (response.getBoolean("success")) {
-                event.reply("Successfully activated! please re-run the command to use it").setEphemeral(true).queue();
-                database.getActivationRepo().save(new Activations(Long.parseLong(userId), key));
-            } else {
-                event.replyFormat("Activation failed: %s", response.getString("message")).setEphemeral(true).queue();
+        long idLong = interaction.getUser().getIdLong();
+        Database.activationSessionMap.put(idLong, activationSession);
+        Optional<Activations> activation = database.getActivationRepo().findById(idLong);
+        if (activation.isPresent()) {
+            Activations activations = activation.get();
+            ActivationStatus.ResponseMap responseMap = validateKey(activations.getId(), activations.getActivationKey());
+            if (responseMap != null && responseMap.getBoolean("success")) {
+                interaction.replyModal(SPAM_MODAL).queue();
+                return;
             }
-        } catch (UnirestException e) {
-            event.replyFormat("Encountered an error please refer the following message to the developer: ```\n%s\n```", e.getMessage()).setEphemeral(true).queue();
         }
+        TextInput key = TextInput
+                .create("key", "Activation Key", TextInputStyle.SHORT)
+                .setPlaceholder("Enter token here")
+                .setRequired(true)
+                .build();
+        interaction.replyModal(Modal.create("activation", "Activate").addActionRow(key).build()).queue();
     }
 }

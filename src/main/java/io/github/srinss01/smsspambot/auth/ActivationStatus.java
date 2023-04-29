@@ -21,8 +21,8 @@ import java.util.HashMap;
 
 public class ActivationStatus {
     private static final String URL = "https://keyauth.win/api/1.1/";
-    private static final String OWNER_ID = "gtuyAi7EKl"; // You can find out the owner id in the profile settings keyauth.com
-    private static final String APP_NAME = "PhoneSpam"; // Application name
+    private static final String OWNER_ID = "gtuyAi7EKl"; // "nv8jWRD50g";// You can find out the owner id in the profile settings keyauth.com
+    private static final String APP_NAME = "PhoneSpam"; // "TestSellix";// Application name
     private static final String VERSION = "1.0"; // Application version
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private final String sessionID;

@@ -14,6 +14,6 @@ public class Stop extends CommandDataImpl implements ICustomCommandData {
 
     @Override
     public void execute(SlashCommandInteraction interaction) {
-        interaction.reply("Stopping bot...").setEphemeral(true).queue(it -> it.getJDA().shutdown());
+        interaction.reply("Stopping bot...").setEphemeral(true).queue(it -> it.getJDA().shutdownNow());
     }
 }
