@@ -14,6 +14,6 @@ import java.util.Map;
 @Getter
 public class Database {
     Config config;
-    ActivationRepo activationRepo;
+    public static final Map<Long, String> activationKeyMap = new HashMap<>();
     public static final Map<Long, ActivationStatus> activationSessionMap = new HashMap<>();
 }

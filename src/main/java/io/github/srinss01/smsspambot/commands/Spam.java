@@ -8,7 +8,6 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import io.github.srinss01.smsspambot.SMSSpamBotApplication;
 import io.github.srinss01.smsspambot.auth.ActivationStatus;
-import io.github.srinss01.smsspambot.database.Activations;
 import io.github.srinss01.smsspambot.database.Database;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -33,7 +32,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.ProxyAuthenticationStrategy;
 
 import javax.swing.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -44,7 +46,6 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 @SuppressWarnings("unchecked")
 public class Spam extends CommandDataImpl implements ICustomCommandData {
-    private final Database database;
     // logger
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Spam.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -73,7 +74,6 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
 
     public Spam(Database database) {
         super("spam", "Spams SMS to a number");
-        this.database = database;
 
         String proxyStr = database.getConfig().getProxy();
         Pattern pattern = Pattern.compile("^(?<usr>[\\w-]+):(?<pswrd>[\\w-]+)@(?<host>\\w+(.\\w)*):(?<port>\\d+)$");
@@ -167,7 +167,7 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
             return;
         }
         event.reply("Successfully activated! please re-run the command to use it").setEphemeral(true).queue();
-        database.getActivationRepo().save(new Activations(userId, key));
+        Database.activationKeyMap.put(userId, key);
         Database.activationSessionMap.remove(userId);
     }
 
@@ -219,20 +219,19 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
         }
         long idLong = interaction.getUser().getIdLong();
         Database.activationSessionMap.put(idLong, activationSession);
-        Optional<Activations> activation = database.getActivationRepo().findById(idLong);
-        if (activation.isPresent()) {
-            Activations activations = activation.get();
-            ActivationStatus.ResponseMap responseMap = validateKey(activations.getId(), activations.getActivationKey());
+        String key = Database.activationKeyMap.get(idLong);
+        if (key != null) {
+            ActivationStatus.ResponseMap responseMap = validateKey(idLong, key);
             if (responseMap != null && responseMap.getBoolean("success")) {
                 interaction.replyModal(SPAM_MODAL).queue();
                 return;
             }
         }
-        TextInput key = TextInput
+        TextInput keyInput = TextInput
                 .create("key", "Activation Key", TextInputStyle.SHORT)
                 .setPlaceholder("Enter token here")
                 .setRequired(true)
                 .build();
-        interaction.replyModal(Modal.create("activation", "Activate").addActionRow(key).build()).queue();
+        interaction.replyModal(Modal.create("activation", "Activate").addActionRow(keyInput).build()).queue();
     }
 }
