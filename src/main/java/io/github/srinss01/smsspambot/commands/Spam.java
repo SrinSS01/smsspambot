@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -86,10 +87,10 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
             System.exit(1);
         }
         applyProxy(
-            matcher.group("host"),
-            matcher.group("port"),
-            matcher.group("usr"),
-            matcher.group("pswrd")
+                matcher.group("host"),
+                matcher.group("port"),
+                matcher.group("usr"),
+                matcher.group("pswrd")
         );
     }
 
@@ -118,46 +119,49 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
         TextChannel textChannel = event.getChannel().asTextChannel();
         AtomicInteger threadCountInt = new AtomicInteger(Integer.parseInt(threadCountString) * sites.size());
         ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(threadCountInt.get());
+        ScheduledThreadPoolExecutor messageExecutor = new ScheduledThreadPoolExecutor(messageCountInt.get());
         AtomicInteger messageSent = new AtomicInteger(0);
         AtomicInteger messageFailed = new AtomicInteger(0);
-        textChannel.sendMessage("Message send - `0`, Message failed - `0`").queue(it -> {
+        AtomicInteger i = new AtomicInteger(0);
+        new Thread(() -> textChannel.sendMessage("Message send - `0`, Message failed - `0`").queue(it -> {
             Runnable edit = () -> it.editMessageFormat("Message sent - `%s`, Message failed - `%s`", messageSent.get(), messageFailed.get()).queue();
             do {
                 executor.execute(() -> {
                     while (messageCountInt.getAndDecrement() >= 0) {
-                        String site = sites.get((int) (Math.random() * sites.size()));
-                        if (site == null) {
-                            continue;
-                        }
-                        try {
-                            Map<String, Object> map = GSON.fromJson(site, Map.class);
-                            String companyId = map.get("company_id").toString();
-                            String siteData = GSON.toJson(map.get("site_data")).replace("{number}", number);
+                        messageExecutor.schedule(() -> {
+                            String site = sites.get((int) (Math.random() * sites.size()));
+                            if (site != null) {
+                                try {
+                                    Map<String, Object> map = GSON.fromJson(site, Map.class);
+                                    String companyId = map.get("company_id").toString();
+                                    String siteData = GSON.toJson(map.get("site_data")).replace("{number}", number);
 
 
+                                    HttpResponse<String> response = getHttpResponse(companyId, siteData);
 
-                            HttpResponse<String> response = getHttpResponse(companyId, siteData);
-
-                            if (response.getStatus() == HTTP_ACCEPTED) {
-                                messageSent.getAndIncrement();
-                                edit.run();
-                            } else {
-                                String body = response.getBody();
-                                if (!body.isBlank()) {
-                                    logger.info(body);
+                                    if (response.getStatus() == HTTP_ACCEPTED) {
+                                        messageSent.getAndIncrement();
+                                        edit.run();
+                                    } else {
+                                        String body = response.getBody();
+                                        if (!body.isBlank()) {
+                                            logger.info(body);
+                                        }
+                                        messageFailed.getAndIncrement();
+                                        edit.run();
+                                    }
+                                } catch (JsonSyntaxException | UnirestException e) {
+                                    logger.error("Error while sending message, {}", e.getMessage());
                                 }
-                                messageFailed.getAndIncrement();
-                                edit.run();
                             }
-                        } catch (JsonSyntaxException | UnirestException e) {
-                            logger.error("Error while sending message, {}", e.getMessage());
-                        }
+                        }, i.getAndIncrement(), TimeUnit.SECONDS);
                     }
                 });
             } while (threadCountInt.getAndDecrement() > 0);
             executor.shutdown();
-        });
+        }), "Spam Thread " + event.getUser().getId()).start();
     }
+
     public void activationModalInteraction(ModalInteractionEvent event) {
         long userId = event.getUser().getIdLong();
         String key = Objects.requireNonNull(event.getValue("key")).getAsString();
@@ -193,14 +197,14 @@ public class Spam extends CommandDataImpl implements ICustomCommandData {
 
     private static ActivationStatus.ResponseMap validateKey(Long id, String key) {
         try {
-            ActivationStatus activationStatus = Database.activationSessionMap.get(id);
-            if (activationStatus == null) {
+            ActivationStatus activationSession = Database.activationSessionMap.get(id);
+            if (activationSession == null) {
                 ActivationStatus.ResponseMap responseMap = new ActivationStatus.ResponseMap();
                 responseMap.put("success", false);
                 responseMap.put("message", "Encountered an error please re-run the command");
                 return responseMap;
             }
-            return activationStatus.check(key, String.valueOf(id));
+            return activationSession.check(key, String.valueOf(id));
         } catch (UnirestException e) {
             ActivationStatus.ResponseMap responseMap = new ActivationStatus.ResponseMap();
             responseMap.put("success", false);
